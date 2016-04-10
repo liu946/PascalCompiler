@@ -1,10 +1,14 @@
 "use strict";
 
 const wordAnalyzer = require('./wordAnalyzer');
+const fs = require('fs');
+fs.readFile('/Users/liu/Desktop/ts.psc', function(err, data){
+  if (err) return;
+  let list = wordAnalyzer.analyze(data.toString());
+  for (let i of list) {
+    console.log(i.format());
+  }
+});
 
-let list = wordAnalyzer.analyze('Program\n ex11; Begin \nWriteln(123);\t\nReadLn;\n End.');
-for (let i of list) {
-  console.log(i.format());
-}
 
 

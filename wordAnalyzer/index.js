@@ -12,7 +12,7 @@ const keyWord = [
   'for','func','goto','if','in','lable',
   'mod','nil','not','of','or','packed',
   'proc','record','repeat','set','then',
-  'to','type','until','var','while','with'];
+  'to','type','until','var','while','with', 'program'];
 
 const symbol = {
   'PLUS': '+',
