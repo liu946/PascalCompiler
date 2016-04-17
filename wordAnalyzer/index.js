@@ -12,7 +12,7 @@ const keyWord = [
   'for','func','goto','if','in','lable',
   'mod','nil','not','of','or','packed',
   'proc','record','repeat','set','then',
-  'to','type','until','var','while','with', 'program'];
+  'to','type','until','var','while','with','program'];
 
 const symbol = {
   'PLUS': '+',
@@ -46,9 +46,10 @@ char.upperLetter  = char.lowerLetter.toUpperCase();
 char.letter       = char.lowerLetter + char.upperLetter;
 char.number       = '1234567890';
 char.dot          = '.';
-char.symbol       = '+-*/^:<>=!,()[]{}.\'";';
+char.symbol       = '+-*/^:<>=!,()[].\'";';
 char.space        = '\t\n\r ';
-char.all          = char.letter + char.symbol + char.space + char.number;
+char.comment      = '{}';
+char.all          = char.letter + char.symbol + char.space + char.number + char.comment;
 
 /**
  * DFA自动机的状态类
@@ -106,6 +107,20 @@ class DFA {
     for (let symboltype in symbol) {
       this._addingSymbol(symboltype, symbol[symboltype]);
     }
+
+    // 构造字符串
+    let string_status = new State(false, false, 'STRING');
+    let string_end = new State(true, true, 'STRING');
+    this.startStatus.addPath('"', string_status);
+    string_status.addPath('"', string_end);
+    string_status.addPath(char.all, string_status);
+
+    // 构造注释
+    let comment_status = new State(false, false, 'COMMENT');
+    let comment_end = new State(true, true, 'COMMENT');
+    this.startStatus.addPath('{', comment_status);
+    comment_status.addPath('}', comment_end);
+    comment_status.addPath(char.all, comment_status);
 
   }
 
