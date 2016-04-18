@@ -72,6 +72,60 @@ class First {
     }
   }
 
+  getFirst(item, generatorForward) {
+    let list = this._getFirstReduce(item.gramma.right, item.dot + 1);
+    if (list.indexOf('') === -1) {
+      // 非可空生成式
+      return list;
+    } else {
+      // 将list放在前面就可以将list中的空产生式去除
+      return First.combineSet(list, generatorForward);
+    }
+  }
+
+  _getFirstReduce(productList, dotNext) {
+    if (productList.length === dotNext) {
+      // 没有匹配的字符了。beta === ''
+      return [''];
+    }
+
+    if (productList[dotNext] in this.first) {
+      let first = this.first[productList[dotNext]];
+      if (first.indexOf('') === -1) {
+        // 没有空产生式
+        return first;
+      } else {
+        // 有空产生式，需要加上之后的产生式
+        return First.combineSet(first, this._getFirstReduce(productList, dotNext + 1));
+      }
+    }
+  }
 }
+
+
+/**
+ * 合并两个数组，没有重复元素，去掉第一个数组中的空产生式
+ * @param arr1
+ * @param arr2
+ * @returns {Array<string>}
+ * @static
+ * @classMethod
+ */
+First.combineSet = function(arr1, arr2) {
+  let setArr = {};
+  let rec = [];
+  arr1.map(function(x) {
+    if (x!=='') {
+      setArr[x] = true;
+      rec.push(x);
+    }
+  });
+  let arr2copy = [];
+  arr2.map(function(x) {
+    // 第二个map中可以包含‘’产生式，这个产生式用于判断是否将发生闭包运算的原始生成式的forward集合引入进来。
+    if (setArr[x] !== undefined) arr2copy.push(x);
+  });
+  return rec.concat(arr2);
+};
 
 module.exports = First;

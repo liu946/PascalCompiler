@@ -4,7 +4,8 @@
   "description": "compiler homework by JS.",
   "main": "index.js",
   "dependencies": {
-    "debug": "^2.2.0"
+    "debug": "^2.2.0",
+    "md5": "^2.1.0"
   },
   "devDependencies": {},
   "repository": {
