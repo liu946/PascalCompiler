@@ -14,6 +14,7 @@ class Item {
   constructor(left, right, forwardSet, dot) {
     dot = dot | 0;
     this.gramma = {left, right: typeof (right) === 'string' ? right.split(' ') : right};
+    this.gramma.right = (this.gramma.right[0] === '') ? [] : this.gramma.right; // 如果右端为字符串空产生式，表示成[]空产生式
     this.forwordSet = forwardSet;
     this.dot = dot;
   }

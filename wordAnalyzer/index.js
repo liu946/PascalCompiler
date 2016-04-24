@@ -12,9 +12,13 @@ const keyWord = [
   'for','func','goto','if','in','lable',
   'mod','nil','not','of','or','packed',
   'proc','record','repeat','set','then',
-  'to','type','until','var','while','with','program'];
+  'to','type','until','var','while','with','program',
+  // type
+  'integer', 'real', 'boolean', 'char', 'string',
 
-const symbol = {
+];
+
+const type = {
   'PLUS': '+',
   'MINUS': '-',
   'MULTI': '*',
@@ -104,8 +108,8 @@ class DFA {
     real_status.addPath(char.number, real_status);
 
     // 构造符号
-    for (let symboltype in symbol) {
-      this._addingSymbol(symboltype, symbol[symboltype]);
+    for (let symboltype in type) {
+      this._addingSymbol(symboltype, type[symboltype]);
     }
 
     // 构造字符串
@@ -209,6 +213,7 @@ class Word {
       case 'ID|KEYWORD':
         if (~keyWord.indexOf(value.toLowerCase())) {
           this.type = value.toUpperCase();
+          return;
         } else {
           this.type = 'ID';
         }
