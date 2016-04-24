@@ -30,6 +30,7 @@ const gramma = {
       generatorFunction : noOption,
     }
   ],
+  //<editor-fold desc='变量声明语句块，对外接口<Var-decl>'>
   '<Var-decl>': [
     {
       generatorRight: '',
@@ -82,12 +83,18 @@ const gramma = {
       generatorFunction : noOption,
     },
   ],
+  //</editor-fold>
+
+  //<editor-fold desc='子过程声明语句块，对外接口<Proc-decl>'>
+
   '<Proc-decl>':  [
     {
       generatorRight: '',
       generatorFunction : noOption,
     }
   ],
+  //</editor-fold>
+
   '<Body>': [
     {
       generatorRight: 'BEGIN <Statement-list> END F_STOP',
@@ -96,23 +103,53 @@ const gramma = {
   ],
   '<Statement-list>': [
     {
-      generatorRight: '<Statement>',
+      generatorRight: '<Statement> SEMIC <Statement-list>',
       generatorFunction: noOption,
     },
     {
-      generatorRight: '<Statement-list> SEMIC <Statement>',
+      generatorRight: '',
       generatorFunction: noOption,
     }
   ],
   '<Statement>':  [
     {
+      generatorRight: '', //空语句
+      generatorFunction: noOption,
+    },
+    {
       generatorRight: 'ID LR_BRAC <Expression> RR_BRAC',//函数调用，todo 多参数
+      generatorFunction: noOption,
+    },
+    {
+      generatorRight: '<Left> ASSIGN <Expression>',//赋值语句
+      generatorFunction: noOption,
+    },
+  ],
+  //<editor-fold desc='左值'>
+  '<Left>': [
+    {
+      generatorRight: 'ID',
+      generatorFunction: noOption,
+    },
+    {
+      generatorRight: 'ID LS_BRAC <Number-expression> RS_BRAC',
+      generatorFunction: noOption,
+    }
+  ],
+  //</editor-fold>
+  '<Number-expression>': [ // todo: 增加运算，目前只支持变量和常数
+    {
+      generatorRight: 'ID',
+      generatorFunction: noOption,
+    },
+    {
+      generatorRight: 'INT_EXP',
       generatorFunction: noOption,
     },
   ],
   '<Expression>': [
     {
-      generatorRight: 'STRING',
+      generatorRight: 'STRING_EXP',
       generatorFunction: noOption,
     }
   ],

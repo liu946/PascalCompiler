@@ -13,7 +13,7 @@ const keyWord = [
   'mod','nil','not','of','or','packed',
   'proc','record','repeat','set','then',
   'to','type','until','var','while','with','program',
-  // type
+  // type , type的常量表达式使用TYPE_EXP表示
   'integer', 'real', 'boolean', 'char', 'string',
 
 ];
@@ -100,8 +100,8 @@ class DFA {
     letter_status.addPath(char.letter + char.number + '_', letter_status);
 
     // 构造数字
-    let digit_status = new State(true, false, 'INT');
-    let real_status = new State(true, false, 'REAL');
+    let digit_status = new State(true, false, 'INT_EXP');
+    let real_status = new State(true, false, 'REAL_EXP');
     this.startStatus.addPath(char.number, digit_status);
     digit_status.addPath('.' , real_status);
     digit_status.addPath(char.number , digit_status);
@@ -113,8 +113,8 @@ class DFA {
     }
 
     // 构造字符串
-    let string_status = new State(false, false, 'STRING');
-    let string_end = new State(true, true, 'STRING');
+    let string_status = new State(false, false, 'STRING_EXP');
+    let string_end = new State(true, true, 'STRING_EXP');
     this.startStatus.addPath('"', string_status);
     string_status.addPath('"', string_end);
     string_status.addPath(char.all, string_status);

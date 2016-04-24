@@ -1,6 +1,7 @@
 Program main;
 var
  i,j,t,m:integer;
+ str:string;
 Begin
-  print("Hello World!")
+ str:="abc";
 End.
