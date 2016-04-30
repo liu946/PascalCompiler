@@ -6,10 +6,17 @@
 const basicGramma = require('../gramma');
 const Symbol = require('./symbol');
 
+const noOption = function(leftSymbol, rightList) {
+  console.log('[REDUCE] ' + leftSymbol.toString() + ' => ' + rightList.map((x)=>x.toString()).join(' '));
+  // 可以执行如下指令
+  // leftSymbol.setAttr(key,val);
+  // rightList[0].getAttr(key);
+};
+
 class Formula {
   constructor(left, right, action) {
     this.gramma = {left, right};
-    this.action = action;
+    this.action = (action === undefined) ? noOption : action;
   }
 
   getLabel() {

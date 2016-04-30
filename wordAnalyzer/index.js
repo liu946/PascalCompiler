@@ -7,15 +7,21 @@ const Reader = require('./reader');
 const debug = require('debug')('wordAnalyzer');
 const assert = require('assert');
 const keyWord = [
-  'and','array','begin','case','const',
-  'div','do','downto','else','end','file',
-  'for','func','goto','if','in','lable',
-  'mod','nil','not','of','or','packed',
-  'proc','record','repeat','set','then',
-  'to','type','until','var','while','with','program',
+  'case','const',
+  'div','do','downto','else','file',
+  'for','func','goto','in','lable',
+  'mod','nil','packed',
+  'proc','record','repeat','set',
+  'to','type','until','var','while','with',
+  // structure
+  'program','begin','end',
+  // Boolean expression
+  'and','or','not',
+  // IF
+  'if', 'then',
   // type , type的常量表达式使用TYPE_EXP表示
   'integer', 'real', 'boolean', 'char', 'string',
-
+  'array', 'of',
 ];
 
 const type = {

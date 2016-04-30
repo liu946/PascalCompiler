@@ -17,7 +17,7 @@
  * 1. 名字可以使用连续内存存储字符串，而每个名字字段存储偏移
  *
  */
-class SymbolSheet {
+class IdentifierSheet {
   constructor(parent = null) {
     this.sheet = {};
     this.parentSheet = parent;
@@ -42,7 +42,7 @@ class SymbolSheet {
   }
 }
 
-function symbolDescribeFactory() {
+function IdentifierDescribeFactory() {
 
 }
 
