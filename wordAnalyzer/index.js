@@ -20,7 +20,7 @@ const keyWord = [
   // IF
   'if', 'then',
   // type , type的常量表达式使用TYPE_EXP表示
-  'integer', 'real', 'boolean', 'char', 'string',
+  'integer', 'real', 'boolean', 'char',
   'array', 'of',
 ];
 

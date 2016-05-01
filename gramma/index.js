@@ -3,7 +3,26 @@
  */
 
 'use strict';
+const sheet = require('../identifierSheet');
+const IDSheet = require('../identifierSheet/identifierSheet');
 
+const basicTypeSpace = {
+  'INTEGER':4,
+  'REAL':8,
+  'CHAR':1,
+  'BOOLEAN':1,
+};
+
+function basicTypeOperation (leftSymbol, rightList) {
+  const typeName = rightList[0].type;
+  leftSymbol.setAttr('type', typeName);
+  leftSymbol.setAttr('space', basicTypeSpace[typeName]);
+}
+
+// tool function
+function copyAttr (leftSymbol, rightList) {
+  leftSymbol.attr = rightList[0].attr;
+}
 
 const gramma = {
   '<Program>': [
@@ -29,52 +48,92 @@ const gramma = {
     },
     {
       generatorRight: 'VAR <Var-decl-list>',
-    }
+      generatorFunction: function(leftSymbol, rightList) {
+        // 这里装入符号表
+        sheet.push(rightList[1].getAttr('iDSheet'));
+      },
+    },
   ],
   '<Var-decl-list>': [
     {
       generatorRight: '<Var-ids> COLON <Var-type> SEMIC <Var-decl-list>',
+      generatorFunction: function(leftSymbol, rightList) {
+        // 这里注册符号表
+        let idSheet = rightList[4].getAttr('iDSheet') ? rightList[4].getAttr('iDSheet') : new IDSheet();
+        leftSymbol.setAttr('iDSheet', idSheet);
+        for (let id of rightList[0].getAttr('ids')) {
+          idSheet.register(id, rightList[2].attr);
+        }
+      },
     },
     {
       generatorRight: '',
-    }
+    },
   ],
   '<Var-ids>': [
     {
       generatorRight: '<Var-ids> COMMA ID',
+      generatorFunction: function(leftSymbol, rightList) {
+        const list = rightList[0].getAttr('ids');
+        list.push(rightList[2].getAttr('value'));
+        leftSymbol.setAttr('ids',list);
+      },
     },
     {
       generatorRight: 'ID',
+      generatorFunction: function(leftSymbol, rightList) {
+        leftSymbol.setAttr('ids', [rightList[0].getAttr('value')]);
+      },
     },
   ],
   '<Var-type>': [
     {
       generatorRight: '<Var-basic-type>',
+      generatorFunction: copyAttr,
     },
     {
       generatorRight: '<Array-type>',
+      generatorFunction: copyAttr,
     }
   ],
   '<Array-type>' : [
     {
       generatorRight: 'ARRAY LS_BRAC INT_EXP RANGE INT_EXP RS_BRAC OF <Var-basic-type>',
+      generatorFunction: function (leftSymbol, rightList) {
+        const start = parseInt(rightList[2].getAttr('value'));
+        const end = parseInt(rightList[4].getAttr('value'));
+        if (end < start) throw '数组元素索引范围有误。';
+        leftSymbol.setAttr('type', 'ARRAY ' + rightList[7].getAttr('type') + ' ' + start + ' ' + end);
+        leftSymbol.setAttr('space', rightList[7].getAttr('space') * (end - start + 1));
+      }
+    },
+    {
+      generatorRight: 'ARRAY LS_BRAC REAL_EXP DOT INT_EXP RS_BRAC OF <Var-basic-type>',
+      generatorFunction: function (leftSymbol, rightList) {
+        const start = parseInt(rightList[2].getAttr('value'));
+        const end = parseInt(rightList[4].getAttr('value'));
+        if (end < start) throw '数组元素索引范围有误。';
+        leftSymbol.setAttr('type', 'ARRAY ' + rightList[7].getAttr('type') + ' ' + start + ' ' + end);
+        leftSymbol.setAttr('space', rightList[7].getAttr('space') * (end - start + 1));
+      }
     },
   ],
   '<Var-basic-type>': [
     {
       generatorRight: 'INTEGER',
+      generatorFunction: basicTypeOperation,
     },
     {
       generatorRight: 'REAL',
+      generatorFunction: basicTypeOperation,
     },
     {
       generatorRight: 'CHAR',
+      generatorFunction: basicTypeOperation,
     },
     {
       generatorRight: 'BOOLEAN',
-    },
-    {
-      generatorRight: 'STRING',
+      generatorFunction: basicTypeOperation,
     },
   ],
   //</editor-fold>

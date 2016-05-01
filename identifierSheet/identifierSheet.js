@@ -1,6 +1,7 @@
 /**
  * Created by liu on 16/4/19.
  */
+'use strict';
 /**
  * 符号表
  * @not_singleton
@@ -18,11 +19,18 @@
  *
  */
 class IdentifierSheet {
-  constructor(parent = null) {
+  constructor(parent) {
+    parent = parent ? parent : null;
     this.sheet = {};
     this.parentSheet = parent;
+    return this;
   }
 
+  /**
+   *
+   * @param name
+   * @param symbolDescribe .type .space
+   */
   register(name, symbolDescribe) {
     if (this.sheet[name] !== undefined) {
       throw name + ' is already defined in this scope!';
@@ -42,7 +50,4 @@ class IdentifierSheet {
   }
 }
 
-function IdentifierDescribeFactory() {
-
-}
-
+module.exports = IdentifierSheet;
