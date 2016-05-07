@@ -3,8 +3,15 @@
  */
 
 'use strict';
+
+const codeList = require('../threeAddressCode');
+const Code = require('../threeAddressCode/code');
+const Definition = require('./definition');
+const grammaFunction = require('./grammaFunction');
 const sheet = require('../identifierSheet');
-const IDSheet = require('../identifierSheet/identifierSheet');
+
+const tempVar = require('./tempGenerator')('$$');
+const tempLabel = require('./tempGenerator')('@@');
 
 const basicTypeSpace = {
   'INTEGER':4,
@@ -33,13 +40,8 @@ const gramma = {
   ],
   '<Block>': [
     {
-      generatorRight: '<Const-decl> <Var-decl> <Proc-decl> <Body>',
+      generatorRight: '<Var-decl> <Proc-decl> <Body>',
     },
-  ],
-  '<Const-decl>': [
-    {
-      generatorRight: '',
-    }
   ],
   //<editor-fold desc='变量声明语句块，对外接口<Var-decl>'>
   '<Var-decl>': [
@@ -48,23 +50,13 @@ const gramma = {
     },
     {
       generatorRight: 'VAR <Var-decl-list>',
-      generatorFunction: function(leftSymbol, rightList) {
-        // 这里装入符号表
-        sheet.push(rightList[1].getAttr('iDSheet'));
-      },
+      generatorFunction: Definition.declare(),
     },
   ],
   '<Var-decl-list>': [
     {
       generatorRight: '<Var-ids> COLON <Var-type> SEMIC <Var-decl-list>',
-      generatorFunction: function(leftSymbol, rightList) {
-        // 这里注册符号表
-        let idSheet = rightList[4].getAttr('iDSheet') ? rightList[4].getAttr('iDSheet') : new IDSheet();
-        leftSymbol.setAttr('iDSheet', idSheet);
-        for (let id of rightList[0].getAttr('ids')) {
-          idSheet.register(id, rightList[2].attr);
-        }
-      },
+      generatorFunction: Definition.declareList(),
     },
     {
       generatorRight: '',
@@ -73,17 +65,11 @@ const gramma = {
   '<Var-ids>': [
     {
       generatorRight: '<Var-ids> COMMA ID',
-      generatorFunction: function(leftSymbol, rightList) {
-        const list = rightList[0].getAttr('ids');
-        list.push(rightList[2].getAttr('value'));
-        leftSymbol.setAttr('ids',list);
-      },
+      generatorFunction: Definition.ids(),
     },
     {
       generatorRight: 'ID',
-      generatorFunction: function(leftSymbol, rightList) {
-        leftSymbol.setAttr('ids', [rightList[0].getAttr('value')]);
-      },
+      generatorFunction: Definition.id(),
     },
   ],
   '<Var-type>': [
@@ -99,23 +85,11 @@ const gramma = {
   '<Array-type>' : [
     {
       generatorRight: 'ARRAY LS_BRAC INT_EXP RANGE INT_EXP RS_BRAC OF <Var-basic-type>',
-      generatorFunction: function (leftSymbol, rightList) {
-        const start = parseInt(rightList[2].getAttr('value'));
-        const end = parseInt(rightList[4].getAttr('value'));
-        if (end < start) throw '数组元素索引范围有误。';
-        leftSymbol.setAttr('type', 'ARRAY ' + rightList[7].getAttr('type') + ' ' + start + ' ' + end);
-        leftSymbol.setAttr('space', rightList[7].getAttr('space') * (end - start + 1));
-      }
+      generatorFunction: Definition.arrayType(),
     },
     {
       generatorRight: 'ARRAY LS_BRAC REAL_EXP DOT INT_EXP RS_BRAC OF <Var-basic-type>',
-      generatorFunction: function (leftSymbol, rightList) {
-        const start = parseInt(rightList[2].getAttr('value'));
-        const end = parseInt(rightList[4].getAttr('value'));
-        if (end < start) throw '数组元素索引范围有误。';
-        leftSymbol.setAttr('type', 'ARRAY ' + rightList[7].getAttr('type') + ' ' + start + ' ' + end);
-        leftSymbol.setAttr('space', rightList[7].getAttr('space') * (end - start + 1));
-      }
+      generatorFunction: Definition.arrayType(),
     },
   ],
   '<Var-basic-type>': [
@@ -168,36 +142,96 @@ const gramma = {
       generatorRight: '', //空语句
     },
     {
-      generatorRight: 'ID LR_BRAC <Expression> RR_BRAC',//函数调用，todo 多参数
+      generatorRight: '<Function-call>',//函数调用，todo 多参数
     },
     {
-      generatorRight: '<Left> ASSIGN <Expression>',//赋值语句
+      generatorRight: 'ID ASSIGN <Expression>',//赋值语句 id = ???
+      generatorFunction: function (leftSymbol, rightList) {
+        if (rightList[2].getAttr('code')) {
+          rightList[2].getAttr('code').changeResult(rightList[0].getAttr('addr'));
+        } else {
+          codeList.genCode(Code.OP.ASSIGN, rightList[2].getAttr('addr'), null, rightList[0].getAttr('value'));
+        }
+      },
+    },
+    {
+      generatorRight: '<Array-exp> ASSIGN <Expression>',//赋值语句 a[1] = ???
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.genCode(Code.OP.AASSIGN,
+          rightList[0].getAttr('offset'),
+          rightList[2].getAttr('addr'),
+          rightList[0].getAttr('baseAddr'));
+      },
     },
     {
       generatorRight: 'IF <Boolean-expression> THEN <Body>',//IF 语句
     },
   ],
-  //<editor-fold desc='左值'>
-  '<Left>': [
-    {
-      generatorRight: 'ID',
-    },
+
+  //<editor-fold desc='赋值'>
+  '<Array-exp>': [
     {
       generatorRight: 'ID LS_BRAC <Number-expression> RS_BRAC',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('baseAddr', rightList[0].getAttr('value'));
+        const type = sheet.getDescribe(rightList[0].getAttr('value')).attr;
+        const index = tempVar.newTemp();
+        codeList.genCode(Code.OP.MUL, rightList[2].getAttr('addr'), type.baseTypeSpace, index);
+        leftSymbol.setAttr('offset', index);
+      },
     }
   ],
   //</editor-fold>
   '<Number-expression>': [ // todo: 索引运算，目前只支持变量和常数
     {
       generatorRight: 'ID',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+      },
     },
     {
       generatorRight: 'INT_EXP',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+      },
     },
   ],
   '<Expression>': [
     {
-      generatorRight: 'STRING_EXP',
+      generatorRight: 'ID',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+      },
+    },
+    {
+      generatorRight: '<Expression> PLUS <Expression>',
+      generatorFunction: grammaFunction.expressionCalculate(codeList.OP.ADD),
+    },
+    {
+      generatorRight: '<Expression> MINUS <Expression>',
+      generatorFunction: grammaFunction.expressionCalculate(codeList.OP.MINUS),
+    },
+    {
+      generatorRight: '<Expression> MULTI <Expression>',
+      generatorFunction: grammaFunction.expressionCalculate(codeList.OP.MUL),
+    },
+    {
+      generatorRight: '<Expression> RDIV <Expression>',
+      generatorFunction: grammaFunction.expressionCalculate(codeList.OP.DIV),
+    },
+    {
+      generatorRight: 'LR_BRAC <Expression> RR_BRAC',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[1].getAttr('addr'));
+      },
+    },
+    {
+      generatorRight: '<Function-call>',
+    },
+  ],
+  '<Function-call>': [
+    {
+      generatorRight: 'ID LR_BRAC <Expression> RR_BRAC',
     }
   ],
   '<Boolean-expression>': [

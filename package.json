@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "debug": "^2.2.0",
+    "format": "^0.2.2",
     "md5": "^2.1.0"
   },
   "devDependencies": {},

@@ -3,6 +3,7 @@
  */
 'use strict';
 const IdentifierSheet = require('./identifierSheet');
+const debug = require('debug')('IDSheet');
 class Sheet {
   constructor() {
     this.sheetHead = null;
@@ -15,6 +16,7 @@ class Sheet {
   push(identifierSheet) {
     identifierSheet.parentSheet = this.sheetHead;
     this.sheetHead = identifierSheet;
+    debug('新的符号表被建立\n' + this.sheetHead.toString());
   }
 
   pop() {

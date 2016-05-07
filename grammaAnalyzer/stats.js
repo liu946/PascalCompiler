@@ -80,7 +80,7 @@ class Stats {
             this.itemList.push(newItem);
             unClosureList.push(newItem);
           } else {
-            // 如果这个表达式已经存在，那么应该只做合并forward集合合并操作
+            // 如果这个表达式已经存在，那么应该只做合并forward集合合并操作// 此时应该检查是否会重复
             formulaSet[formula].forwordSet = First.combineSet(formulaSet[formula].forwordSet, newItem.forwordSet);
           }
         }

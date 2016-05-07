@@ -123,9 +123,9 @@ First.combineSet = function(arr1, arr2) {
   let arr2copy = [];
   arr2.map(function(x) {
     // 第二个map中可以包含‘’产生式，这个产生式用于判断是否将发生闭包运算的原始生成式的forward集合引入进来。
-    if (setArr[x] !== undefined) arr2copy.push(x);
+    if (setArr[x] === undefined) arr2copy.push(x);
   });
-  return rec.concat(arr2);
+  return rec.concat(arr2copy);
 };
 
 module.exports = First;

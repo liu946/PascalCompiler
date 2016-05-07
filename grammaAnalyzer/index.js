@@ -6,6 +6,7 @@ const Item = require('./item');
 const Stats = require('./stats');
 const SymbolStack = require('../semanticAnalyzer/symbolStack');
 const semantic = require('../semanticAnalyzer');
+const startSymbol = require('../gramma/definition').STARTSYMBOL;
 class StatsStack {
   constructor(firstStats) {
     this.stack = [firstStats];
@@ -45,7 +46,7 @@ class StatsSet {
     // 构造初始节点
     let startStats = new Stats();
     this.startStats = startStats;
-    startStats.pushItem(new Item('<Start>', '<Program>', ['$']));
+    startStats.pushItem(new Item('<Start>', startSymbol, ['$']));
     startStats.closure();
     this._register(startStats);
     this._init();
@@ -80,7 +81,7 @@ class StatsSet {
           statsStack.push(statsStack.top().goto[action.gramma.left]);
           // 此处放置归约处理程序
           let grammaMark = action.gramma.left + ' => ' + action.gramma.right.join(' ');
-          let reduceLeft = semantic.reduceAction(grammaMark, action.gramma.left, reduceRight);
+          let reduceLeft = semantic.reduceAction(grammaMark, action.gramma.left, reduceRight, symbolStack.top());
           //
           symbolStack.push(reduceLeft);
           break;
@@ -91,7 +92,7 @@ class StatsSet {
       }
 
       // 输出归约情况 todo 删除
-      console.log('\t' + symbolStack.toString());
+      // console.log('\t' + symbolStack.toString());
     }
 
   }
@@ -139,9 +140,7 @@ class StatsSet {
 
       //// print
       //console.log('<<<<<<<<<<<<<<<<<<<<< 分割线 >>>>>>>>>>>>>>>>>>>>>>>')
-      //for (let s in statsSet.statsDict) {
-      //  statsSet.statsDict[s].print();
-      //}
+      //this.print();
     }
   }
 

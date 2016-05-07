@@ -20,6 +20,10 @@ class SymbolStack {
     return this.stack.splice(this.stack.length - num, num);
   }
 
+  top() {
+    return this.stack[this.stack.length];
+  }
+
   length() {
     return this.stack.length;
   }

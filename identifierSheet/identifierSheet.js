@@ -2,6 +2,8 @@
  * Created by liu on 16/4/19.
  */
 'use strict';
+const Identifier = require('./identifier');
+
 /**
  * 符号表
  * @not_singleton
@@ -23,7 +25,29 @@ class IdentifierSheet {
     parent = parent ? parent : null;
     this.sheet = {};
     this.parentSheet = parent;
+    this.lastAddress = 0;
+    this.memoryGrid = 4;
     return this;
+  }
+
+
+
+  /**
+   * 合并两个符号表
+   * @param that
+   * @returns {IdentifierSheet}
+   */
+  combine (that) {
+    for (let symbolName in that.sheet) {
+      this.register(symbol, that.sheet[symbolName]);
+    }
+    return this;
+  }
+
+  incraceAddress (space) {
+    this.lastAddress += space;
+    if (this.lastAddress % this.memoryGrid)
+      this.lastAddress += this.memoryGrid - (this.lastAddress % this.memoryGrid);
   }
 
   /**
@@ -35,7 +59,8 @@ class IdentifierSheet {
     if (this.sheet[name] !== undefined) {
       throw name + ' is already defined in this scope!';
     } else {
-      this.sheet[name] = symbolDescribe;
+      this.sheet[name] = new Identifier(symbolDescribe, this.lastAddress, name);
+      this.incraceAddress(symbolDescribe.space);
     }
   }
 
@@ -47,6 +72,14 @@ class IdentifierSheet {
     } else {
       throw 'undefined symbol ' + name;
     }
+  }
+
+  toString() {
+    let str = '';
+    for (let id in this.sheet) {
+      str += (this.sheet[id].toString() + '\n');
+    }
+    return str;
   }
 }
 
