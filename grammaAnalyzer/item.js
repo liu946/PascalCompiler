@@ -33,6 +33,19 @@ class Item {
     return right;
   }
 
+  combineFormulaSet (thatSet) {
+    const recordMap = {};
+    const forwordSet = this.forwordSet;
+    this.forwordSet.map(function (x) {
+      recordMap[x] = true;
+    });
+    thatSet.map(function (x) {
+      if (recordMap[x] === undefined) {
+        forwordSet.push(x);
+      }
+    });
+  }
+
   equal(that) {
     return this.toString() === that.toString();
   }

@@ -15,6 +15,7 @@ class Stats {
     this.itemList = [];
     this.goto = {};
     this.action = {};
+    this.itemDict = {};
     return this;
   }
 
@@ -41,7 +42,13 @@ class Stats {
   }
 
   pushItem(item) {
-    this.itemList.push(item);
+    const formula = item.formulaString();
+    if (this.itemDict[formula]) {
+      this.itemDict[formula].combineFormulaSet(item.forwordSet);
+    } else {
+      this.itemList.push(item);
+      this.itemDict[formula] = item;
+    }
   }
 
   toString() {
@@ -77,11 +84,12 @@ class Stats {
           let formula = newItem.formulaString();
           if (formulaSet[formula] === undefined) {
             formulaSet[formula] = newItem;
-            this.itemList.push(newItem);
+            this.pushItem(newItem);
             unClosureList.push(newItem);
           } else {
             // 如果这个表达式已经存在，那么应该只做合并forward集合合并操作// 此时应该检查是否会重复
-            formulaSet[formula].forwordSet = First.combineSet(formulaSet[formula].forwordSet, newItem.forwordSet);
+            //formulaSet[formula].forwordSet = First.combineSet(formulaSet[formula].forwordSet, newItem.forwordSet);
+            this.pushItem(newItem);// 这里使用这句话也是起到合并操作，详见函数实现
           }
         }
       }

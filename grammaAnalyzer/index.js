@@ -92,7 +92,7 @@ class StatsSet {
       }
 
       // 输出归约情况 todo 删除
-      // console.log('\t' + symbolStack.toString());
+      //console.log('\t' + symbolStack.toString());
     }
 
   }

@@ -8,10 +8,15 @@ const Code = require('./code');
 class CodeList {
   constructor() {
     this.list = [];
+    this.lineCode = 1;
   }
 
   genCode(op, a1, a2, result) {
-    this.list.push(new Code(op, a1, a2, result));
+    this.list.push(new Code(op, a1, a2, result, this.lineCode++));
+  }
+
+  getNextLineCode() {
+    return this.lineCode;
   }
 
   genCodeList(codeList) {
@@ -25,7 +30,15 @@ class CodeList {
   print() {
     console.log(this.toString());
   }
+
+  backPatch(codeNumberList, result) {
+    const list = this.list;
+    codeNumberList.map(function (x) {
+      list[x - 1].changeResult(result);
+    });
+  }
 }
+
 
 
 //singleton

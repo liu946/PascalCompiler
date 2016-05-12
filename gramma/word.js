@@ -4,11 +4,13 @@
 
 const keyWord = [
   'case','const',
-  'div','do','downto','else','file',
+  'div','downto','file',
   'for','func','goto','in','lable',
   'mod','nil','packed',
   'proc','record','repeat','set',
-  'to','type','until','while','with',
+  'to','type','until',
+  // loop
+  'while','do','break',
   // structure
   'program',
   'const','var',
@@ -16,7 +18,7 @@ const keyWord = [
   // Boolean expression
   'and','or','not',
   // IF
-  'if', 'then',
+  'if', 'else', 'then',
   // type , type的常量表达式使用TYPE_EXP表示
   'integer', 'real', 'boolean', 'char',
   'array', 'of',
@@ -45,7 +47,7 @@ const type = {
   'EXP': '**',
   'LS_BRAC': '[',
   'RS_BRAC': ']',
-  'Q_MARK': '\''
+  'Q_MARK': '\'',
 };
 
 const char = {};

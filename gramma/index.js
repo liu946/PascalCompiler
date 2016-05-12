@@ -8,7 +8,9 @@ const codeList = require('../threeAddressCode');
 const Code = require('../threeAddressCode/code');
 const Definition = require('./definition');
 const grammaFunction = require('./grammaFunction');
+const boolExpression = require('./boolExpression');
 const sheet = require('../identifierSheet');
+const loopStack = require('./loopStack');
 
 const tempVar = require('./tempGenerator')('$$');
 const tempLabel = require('./tempGenerator')('@@');
@@ -124,50 +126,128 @@ const gramma = {
   '<Body>': [
     {
       generatorRight: 'BEGIN <Statement-list> END F_STOP',
-    },
-    {
-      generatorRight: '<Statement>',
+      generatorFunction: function (leftSymbol, rightList) {
+        if (rightList[1].getAttr('nextList').length) {
+          codeList.backPatch(rightList[1].getAttr('nextList'), codeList.getNextLineCode());
+          codeList.genCode(Code.OP.NOP, null, null, null);
+        }
+      },
     },
   ],
   '<Statement-list>': [
     {
-      generatorRight: '<Statement> SEMIC <Statement-list>',
+      generatorRight: '<Statement-list> <M> <Statement>',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[0].getAttr('nextList'), rightList[1].getAttr('instr'));
+        leftSymbol.setAttr('nextList', rightList[2].getAttr('nextList'));
+      },
     },
     {
-      generatorRight: '',
+      generatorRight: '<Statement>',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('nextList', rightList[0].getAttr('nextList'));
+      },
     }
   ],
   '<Statement>': [
     {
       generatorRight: '', //空语句
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('nextList', []);
+      },
     },
     {
-      generatorRight: '<Function-call>',//函数调用，todo 多参数
+      generatorRight: 'IF <Boolean-exp> THEN <M> <Statement>',//IF 语句
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[1].getAttr('trueList'), rightList[3].getAttr('instr'));
+        leftSymbol.setAttr('nextList', rightList[1].getAttr('falseList').concat(rightList[4].getAttr('nextList')));
+      },
     },
     {
-      generatorRight: 'ID ASSIGN <Expression>',//赋值语句 id = ???
+      generatorRight: 'IF <Boolean-exp> THEN <M> <Statement> <N> ELSE <M> <Statement>',//IF ELSE语句
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[1].getAttr('trueList'), rightList[3].getAttr('instr'));
+        codeList.backPatch(rightList[1].getAttr('falseList'), rightList[7].getAttr('instr'));
+        leftSymbol.setAttr('nextList',
+          rightList[4].getAttr('nextList').concat
+          (rightList[5].getAttr('nextList')).concat
+          (rightList[8].getAttr('nextList'))
+        );
+      },
+    },
+    {
+      generatorRight: 'WHILE <M> <Boolean-exp> DO <Loop-entry> <M> <Statement>',//WHILE
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[6].getAttr('nextList'), rightList[1].getAttr('instr'));
+        codeList.backPatch(rightList[2].getAttr('trueList'), rightList[5].getAttr('instr'));
+        leftSymbol.setAttr('nextList', rightList[2].getAttr('falseList').concat(loopStack.popBreakList()));
+        codeList.genCode(Code.OP.GOTO, null, null, rightList[1].getAttr('instr'));
+      },
+    },
+    {
+      generatorRight: 'BREAK SEMIC',
+      generatorFunction: function (leftSymbol, rightList) {
+        loopStack.registerBreak(codeList.getNextLineCode());
+        leftSymbol.setAttr('nextList', []);
+        codeList.genCode(Code.OP.GOTO, null, null, null);
+      },
+    },
+    {
+      generatorRight: 'BEGIN <Statement-list> END',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('nextList', rightList[1].getAttr('nextList'));
+      },
+    },
+    {
+      generatorRight: 'ID ASSIGN <Expression> SEMIC',//赋值语句 id = ???
       generatorFunction: function (leftSymbol, rightList) {
         if (rightList[2].getAttr('code')) {
           rightList[2].getAttr('code').changeResult(rightList[0].getAttr('addr'));
         } else {
           codeList.genCode(Code.OP.ASSIGN, rightList[2].getAttr('addr'), null, rightList[0].getAttr('value'));
         }
+        leftSymbol.setAttr('nextList', []);
       },
     },
     {
-      generatorRight: '<Array-exp> ASSIGN <Expression>',//赋值语句 a[1] = ???
+      generatorRight: '<Array-exp> ASSIGN <Expression> SEMIC',//赋值语句 a[1] = ???
       generatorFunction: function (leftSymbol, rightList) {
         codeList.genCode(Code.OP.AASSIGN,
           rightList[0].getAttr('offset'),
           rightList[2].getAttr('addr'),
           rightList[0].getAttr('baseAddr'));
+        leftSymbol.setAttr('nextList', []);
       },
     },
     {
-      generatorRight: 'IF <Boolean-expression> THEN <Body>',//IF 语句
+      generatorRight: '<Function-call> SEMIC',//函数调用，todo 多参数
     },
   ],
-
+  '<Loop-entry>': [
+    {
+      generatorRight: '',
+      generatorFunction: function (leftSymbol, rightList) {
+        loopStack.enterNewLoop();
+      },
+    }
+  ],
+  '<M>': [
+    {
+      generatorRight: '',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('instr', codeList.getNextLineCode());
+      },
+    }
+  ],
+  '<N>': [
+    {
+      generatorRight: '',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('nextList', [codeList.getNextLineCode()]);
+        codeList.genCode(Code.OP.GOTO, null, null, null);
+      },
+    }
+  ],
   //<editor-fold desc='赋值'>
   '<Array-exp>': [
     {
@@ -197,6 +277,18 @@ const gramma = {
     },
   ],
   '<Expression>': [
+    {
+      generatorRight: 'INT_EXP',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+      },
+    },
+    {
+      generatorRight: 'REAL_EXP',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+      },
+    },
     {
       generatorRight: 'ID',
       generatorFunction: function (leftSymbol, rightList) {
@@ -234,9 +326,86 @@ const gramma = {
       generatorRight: 'ID LR_BRAC <Expression> RR_BRAC',
     }
   ],
-  '<Boolean-expression>': [
+  '<Boolean-exp>': [
     {
-      generatorRight: 'ID',
+      generatorRight: '<Boolean-exp> AND <M> <Boolean-exp>',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[0].getAttr('trueList'), rightList[2].getAttr('instr'));
+        leftSymbol.setAttr('falseList', rightList[0].getAttr('falseList').concat(rightList[3].getAttr('falseList')));
+        leftSymbol.setAttr('trueList', rightList[3].getAttr('trueList'));
+      },
+    },
+    {
+      generatorRight: '<Boolean-exp> OR <M> <Boolean-exp>',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.backPatch(rightList[0].getAttr('falseList'), rightList[2].getAttr('instr'));
+        leftSymbol.setAttr('trueList', rightList[0].getAttr('trueList').concat(rightList[3].getAttr('trueList')));
+        leftSymbol.setAttr('falseList', rightList[3].getAttr('falseList'));
+      },
+    },
+    {
+      generatorRight: 'NOT <Boolean-exp>',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('trueList', rightList[1].getAttr('falseList'));
+        leftSymbol.setAttr('falseList', rightList[1].getAttr('trueList'));
+      },
+    },
+    {
+      generatorRight: 'TRUE',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('trueList', [codeList.getNextLineCode()]);
+        codeList.genCode(Code.OP.GOTO, null, null, null);
+      },
+    },
+    {
+      generatorRight: 'FALSE',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('falseList', [codeList.getNextLineCode()]);
+        codeList.genCode(Code.OP.GOTO, null, null, null);
+      },
+    },
+    {
+      generatorRight: 'LR_BRAC <Boolean-exp> RR_BRAC',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('trueList', rightList[1].getAttr('trueList'));
+        leftSymbol.setAttr('falseList', rightList[1].getAttr('falseList'));
+      },
+    },
+    {
+      generatorRight: '<Expression> <Relation> <Expression>',
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('trueList', [codeList.getNextLineCode()]);
+        leftSymbol.setAttr('falseList', [codeList.getNextLineCode() + 1]);
+        codeList.genCode(rightList[1].getAttr('op'), rightList[0].getAttr('addr'), rightList[2].getAttr('addr'), null);
+        codeList.genCode(Code.OP.GOTO, null, null, null);
+      },
+    },
+  ],
+
+  '<Relation>': [// <Relation>.op = Code.OP. EQ | LT | ....
+    {
+      generatorRight: 'EQ',// ==
+      generatorFunction: boolExpression.relation(Code.OP.EQ),
+    },
+    {
+      generatorRight: 'LT',// <
+      generatorFunction: boolExpression.relation(Code.OP.LT),
+    },
+    {
+      generatorRight: 'GT',// >
+      generatorFunction: boolExpression.relation(Code.OP.GT),
+    },
+    {
+      generatorRight: 'LE',// <=
+      generatorFunction: boolExpression.relation(Code.OP.LE),
+    },
+    {
+      generatorRight: 'GE',// >=
+      generatorFunction: boolExpression.relation(Code.OP.GE),
+    },
+    {
+      generatorRight: 'NE',// <>
+      generatorFunction: boolExpression.relation(Code.OP.NE),
     },
   ],
 };
