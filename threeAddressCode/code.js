@@ -76,6 +76,12 @@ Code.OPstring = {
   NE: ifExpressionGenerator('<>'),//'NE', // if a1 <> a2 goto result
   DEFAULT: function () {
     return '';
+  },
+  PARAM: function (a1) {
+    return 'param ' + a1;
+  },
+  CALL: function (a1, a2) {
+    return 'call ' + a1 + ' ' + a2;
   }
 };
 

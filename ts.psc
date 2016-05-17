@@ -18,4 +18,5 @@ Begin
    end
   else if i < 2 * j then
    i := 3 * j;
+  foo(i,i+j,2*(3+j),(i*((j+i)*2))+((3*i)+j));
 End.

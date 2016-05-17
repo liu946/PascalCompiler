@@ -119,7 +119,24 @@ const gramma = {
   '<Proc-decl>': [
     {
       generatorRight: '',
-    }
+    },
+    {
+      generatorRight: 'PROC <Proc-entry> ID LR_BRAC <Var-decl-list> RR_BRAC COLON <Var-type> SEMIC <Block> <Proc-decl>',
+      generatorFunction: function (leftSymbol, rightList) {
+        // 弹出符号表
+        // 注册id(函数名)
+
+      }
+    },
+  ],
+  '<Proc-entry>': [
+    {
+      generatorRight: '',
+      generatorFunction: function (leftSymbol, rightList) {
+        // 压入新的符号表
+        // 记录过程入口地址
+      },
+    },
   ],
   //</editor-fold>
 
@@ -220,7 +237,10 @@ const gramma = {
       },
     },
     {
-      generatorRight: '<Function-call> SEMIC',//函数调用，todo 多参数
+      generatorRight: '<Proc-call> SEMIC',//函数调用
+      generatorFunction: function (leftSymbol, rightList) {
+        leftSymbol.setAttr('nextList', []);
+      },
     },
   ],
   '<Loop-entry>': [
@@ -317,13 +337,29 @@ const gramma = {
         leftSymbol.setAttr('addr', rightList[1].getAttr('addr'));
       },
     },
-    {
-      generatorRight: '<Function-call>',
-    },
   ],
-  '<Function-call>': [
+  '<Proc-call>': [
     {
-      generatorRight: 'ID LR_BRAC <Expression> RR_BRAC',
+      generatorRight: 'ID LR_BRAC <Expression-list> RR_BRAC',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.genCode(Code.OP.CALL, rightList[0].getAttr('value'), rightList[2].getAttr('argumentNum'), null);
+      }
+    }
+  ],
+  '<Expression-list>': [
+    {
+      generatorRight: '<Expression>',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.genCode(Code.OP.PARAM, rightList[0].getAttr('addr'));
+        leftSymbol.setAttr('argumentNum', 1);
+      },
+    },
+    {
+      generatorRight: '<Expression> COMMA <Expression-list>',
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.genCode(Code.OP.PARAM, rightList[0].getAttr('addr'));
+        leftSymbol.setAttr('argumentNum', rightList[2].getAttr('argumentNum') + 1);
+      },
     }
   ],
   '<Boolean-exp>': [
@@ -381,7 +417,6 @@ const gramma = {
       },
     },
   ],
-
   '<Relation>': [// <Relation>.op = Code.OP. EQ | LT | ....
     {
       generatorRight: 'EQ',// ==
