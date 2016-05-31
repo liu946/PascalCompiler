@@ -14,7 +14,8 @@ class Symbol {
     } else {// 终结符，token，token.type,token.value;
       this.type = word.type;
       this.attr = {};
-      if(word.value !== undefined) this.attr.value = word.value;
+      this.setAttr('word', word);
+      if(word.value !== undefined) this.setAttr('value', word.value);
     }
     return this;
   }

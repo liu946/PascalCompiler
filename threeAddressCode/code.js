@@ -19,15 +19,22 @@ class Code {
     this.a2 = a2 ? a2 : null;
     this.result = result ? result : null;
     this.label = label ? label : '';
+    this.removed = false;
   }
 
   changeResult (result) {
     this.result = result;
   }
 
+  getRight () {
+    return this.op + ' ' + this.a1 + ' ' + this.a2;
+  }
+
   toString() {
     return fill(this.label, 5) + fill(this.op, 20) + fill(this.a1, 20) + fill(this.a2, 20) + "=>  " + fill(this.result, 20) + '// '+
-      fill(this.label, 4) + (Code.OPstring[this.op] ? Code.OPstring[this.op]: Code.OPstring.DEFAULT)(this.a1, this.a2, this.result);
+      fill(this.label, 4) + (Code.OPstring[this.op] ? Code.OPstring[this.op]: Code.OPstring.DEFAULT)(this.a1, this.a2, this.result) +
+      (this.removed ? '// 优化删除' : '')
+      ;
   }
 }
 
@@ -54,6 +61,9 @@ Code.OPstring = {
    */
   AASSIGN: function (a1, a2, result) {
     return result + '[' + a1 + '] = ' + a2;
+  },
+  ASSIGNA: function (a1, a2, result) {
+    return result + ' = ' + a1 + '[' + a2 + ']';
   },
   ASSIGN: function (a1, a2, result) {
     return result + ' = ' + a1;
@@ -82,6 +92,9 @@ Code.OPstring = {
   },
   CALL: function (a1, a2) {
     return 'call ' + a1 + ' ' + a2;
+  },
+  EXIT: function () {
+    return 'exit';
   }
 };
 
@@ -112,6 +125,8 @@ Code.OP = {
   LE : 'LE', // if a1 <= a2 goto result
   GE : 'GE', // if a1 >= a2 goto result
   NE : 'NE', // if a1 <> a2 goto result
+
+  EXIT : 'EXIT',
 
 };
 

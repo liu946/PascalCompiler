@@ -12,8 +12,7 @@ const boolExpression = require('./boolExpression');
 const sheet = require('../identifierSheet');
 const loopStack = require('./loopStack');
 
-const tempVar = require('./tempGenerator')('$$');
-const tempLabel = require('./tempGenerator')('@@');
+const tempVar = require('./tempGenerator')('tmp_', {type: 'ID'});
 
 const basicTypeSpace = {
   'INTEGER':4,
@@ -37,12 +36,13 @@ const gramma = {
   '<Program>': [
     {
       generatorRight: 'PROGRAM ID SEMIC <Block>',
-      generatorFunction: undefined, // 使用这种方式执行操作
+      generatorFunction: Definition.setSheetName(), // 使用这种方式执行操作
     },
   ],
   '<Block>': [
     {
       generatorRight: '<Var-decl> <Proc-decl> <Body>',
+      generatorFunction: Definition.upIDSheet(),
     },
   ],
   //<editor-fold desc='变量声明语句块，对外接口<Var-decl>'>
@@ -86,11 +86,11 @@ const gramma = {
   ],
   '<Array-type>' : [
     {
-      generatorRight: 'ARRAY LS_BRAC INT_EXP RANGE INT_EXP RS_BRAC OF <Var-basic-type>',
+      generatorRight: 'ARRAY LS_BRAC INT_EXP RANGE INT_EXP RS_BRAC OF <Var-type>',
       generatorFunction: Definition.arrayType(),
     },
     {
-      generatorRight: 'ARRAY LS_BRAC REAL_EXP DOT INT_EXP RS_BRAC OF <Var-basic-type>',
+      generatorRight: 'ARRAY LS_BRAC REAL_EXP DOT INT_EXP RS_BRAC OF <Var-type>',
       generatorFunction: Definition.arrayType(),
     },
   ],
@@ -219,9 +219,9 @@ const gramma = {
       generatorRight: 'ID ASSIGN <Expression> SEMIC',//赋值语句 id = ???
       generatorFunction: function (leftSymbol, rightList) {
         if (rightList[2].getAttr('code')) {
-          rightList[2].getAttr('code').changeResult(rightList[0].getAttr('addr'));
+          rightList[2].getAttr('code').changeResult(rightList[0].getAttr('word'));
         } else {
-          codeList.genCode(Code.OP.ASSIGN, rightList[2].getAttr('addr'), null, rightList[0].getAttr('value'));
+          codeList.genCode(Code.OP.ASSIGN, rightList[2].getAttr('addr'), null, rightList[0].getAttr('word'));
         }
         leftSymbol.setAttr('nextList', []);
       },
@@ -242,6 +242,13 @@ const gramma = {
         leftSymbol.setAttr('nextList', []);
       },
     },
+    {
+      generatorRight: 'EXIT SEMIC', // 退出程序
+      generatorFunction: function (leftSymbol, rightList) {
+        codeList.genCode(Code.OP.EXIT, null, null, null);
+        leftSymbol.setAttr('nextList', []);
+      }
+    }
   ],
   '<Loop-entry>': [
     {
@@ -273,8 +280,8 @@ const gramma = {
     {
       generatorRight: 'ID LS_BRAC <Number-expression> RS_BRAC',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('baseAddr', rightList[0].getAttr('value'));
-        const type = sheet.getDescribe(rightList[0].getAttr('value')).attr;
+        leftSymbol.setAttr('baseAddr', rightList[0].getAttr('word'));
+        const type = sheet.getDescribe(rightList[0].getAttr('word')).attr;
         const index = tempVar.newTemp();
         codeList.genCode(Code.OP.MUL, rightList[2].getAttr('addr'), type.baseTypeSpace, index);
         leftSymbol.setAttr('offset', index);
@@ -286,13 +293,13 @@ const gramma = {
     {
       generatorRight: 'ID',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+        leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
       },
     },
     {
       generatorRight: 'INT_EXP',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+        leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
       },
     },
   ],
@@ -300,19 +307,38 @@ const gramma = {
     {
       generatorRight: 'INT_EXP',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+        leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
       },
     },
     {
       generatorRight: 'REAL_EXP',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+        leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
+      },
+    },
+    {
+      generatorRight: 'STRING_EXP', // 这里虽然是这样,但是并不支持字符串表达式,只支持常量,用于函数调用
+      generatorFunction: function (leftSymbol, rightList) {
+        // 注册一个常量字符串
+        const id = sheet.registerStr(rightList[0]);
+        leftSymbol.setAttr('addr', id);
+
+        // 新建一个临时变量, 指针, 指向常量
       },
     },
     {
       generatorRight: 'ID',
       generatorFunction: function (leftSymbol, rightList) {
-        leftSymbol.setAttr('addr', rightList[0].getAttr('value'));
+        leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
+      },
+    },
+    {
+      generatorRight: '<Array-exp>',
+      generatorFunction:  function (leftSymbol, rightList) {
+        const temp = tempVar.newTemp();
+        const code = codeList.genCode(Code.OP.ASSIGNA, rightList[0].getAttr('baseAddr'), rightList[0].getAttr('offset'), temp.toString());
+        leftSymbol.setAttr('code', code);
+        leftSymbol.setAttr('addr', temp);
       },
     },
     {
@@ -337,12 +363,19 @@ const gramma = {
         leftSymbol.setAttr('addr', rightList[1].getAttr('addr'));
       },
     },
+    {
+      generatorRight: 'ID LR_BRAC <Expression-list> RR_BRAC', // Function Call return value
+      generatorFunction: function (leftSymbol, rightList) {
+        const code = codeList.genCode(Code.OP.CALL, rightList[0].getAttr('word'), rightList[2].getAttr('argumentNum'), null);
+        leftSymbol.setAttr('code', code);
+      }
+    },
   ],
   '<Proc-call>': [
     {
       generatorRight: 'ID LR_BRAC <Expression-list> RR_BRAC',
       generatorFunction: function (leftSymbol, rightList) {
-        codeList.genCode(Code.OP.CALL, rightList[0].getAttr('value'), rightList[2].getAttr('argumentNum'), null);
+        codeList.genCode(Code.OP.CALL, rightList[0].getAttr('word'), rightList[2].getAttr('argumentNum'), null);
       }
     }
   ],

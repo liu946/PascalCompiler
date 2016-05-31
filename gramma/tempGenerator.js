@@ -14,21 +14,26 @@ class TempLabel {
 }
 
 class TempGenerator {
-  constructor (prefix) {
+  constructor (prefix, attr) {
+    this.attr = attr;
     this.prefix = prefix;
     this.counter = 0;
   }
 
   newTemp(suffix) {
     this.counter++;
-    return new TempLabel(this.prefix + this.counter + (suffix ? suffix : ''));
+    const tl = new TempLabel(this.prefix + this.counter + (suffix ? suffix : ''));
+    for (let i in this.attr) {
+      tl[i] = this.attr[i];
+    }
+    return tl;
   }
 }
 
 const tempGenSet = {};
-function gen(prefix) {
+function gen(prefix, attr) {
   if (tempGenSet[prefix] === undefined) {
-    tempGenSet[prefix] = new TempGenerator(prefix);
+    tempGenSet[prefix] = new TempGenerator(prefix, attr);
   }
   return tempGenSet[prefix];
 }

@@ -22,6 +22,8 @@ const keyWord = [
   // type , type的常量表达式使用TYPE_EXP表示
   'integer', 'real', 'boolean', 'char',
   'array', 'of',
+  //
+  'exit',
 ];
 
 const type = {
@@ -56,7 +58,7 @@ char.upperLetter  = char.lowerLetter.toUpperCase();
 char.letter       = char.lowerLetter + char.upperLetter;
 char.number       = '1234567890';
 char.dot          = '.';
-char.symbol       = '+-*/^:<>=!,()[].\'";';
+char.symbol       = '+-*/^:<>=!,()[].\'";%';
 char.space        = '\t\n\r ';
 char.comment      = '{}';
 char.all          = char.letter + char.symbol + char.space + char.number + char.comment;

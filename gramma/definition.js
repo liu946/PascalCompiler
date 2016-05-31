@@ -8,6 +8,21 @@ const IDSheet = require('../identifierSheet/identifierSheet');
 
 exports.STARTSYMBOL = '<Program>';
 
+// PROGRAM ID SEMIC <Block>
+exports.setSheetName = function () {
+  return function (leftSymbol, rightList) {
+    leftSymbol.setAttr('name', rightList[1].getAttr('value'));
+    sheet.setSheetName(leftSymbol.getAttr('name'), rightList[3].getAttr('iDSheet'));
+  }
+};
+
+// <Var-decl> <Proc-decl> <Body>
+exports.upIDSheet = function () {
+  return function(leftSymbol, rightList) {
+    leftSymbol.setAttr('iDSheet', rightList[0].getAttr('iDSheet'));
+  };
+};
+
 // VAR <Var-decl-list>
 exports.declare = function () {
   return function(leftSymbol, rightList, brotherSymbol) {

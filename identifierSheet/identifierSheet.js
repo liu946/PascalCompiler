@@ -3,6 +3,7 @@
  */
 'use strict';
 const Identifier = require('./identifier');
+const strLabel = require('../gramma/tempGenerator')('STR_', {type: 'addrLabel'});
 
 /**
  * 符号表
@@ -23,14 +24,26 @@ const Identifier = require('./identifier');
 class IdentifierSheet {
   constructor(parent) {
     parent = parent ? parent : null;
-    this.sheet = {};
     this.parentSheet = parent;
+    this.idSheetMap = {};
     this.lastAddress = 0;
     this.memoryGrid = 4;
+    this.constStrMap = {};
     return this;
   }
 
+  registerStr(word) {
+    const newStr = strLabel.newTemp();
+    this.constStrMap[newStr.toString()] = word.getAttr('value');
+    return newStr;
+  }
 
+
+  writeBack() {
+    for (let i in this.idSheetMap) {
+      this.idSheetMap[i].writeBack();
+    }
+  }
 
   /**
    * 合并两个符号表
@@ -38,8 +51,8 @@ class IdentifierSheet {
    * @returns {IdentifierSheet}
    */
   combine (that) {
-    for (let symbolName in that.sheet) {
-      this.register(symbol, that.sheet[symbolName]);
+    for (let symbolName in that.idSheetMap) {
+      this.register(symbol, that.idSheetMap[symbolName]);
     }
     return this;
   }
@@ -56,28 +69,28 @@ class IdentifierSheet {
    * @param symbolDescribe .type .space
    */
   register(name, symbolDescribe) {
-    if (this.sheet[name] !== undefined) {
-      throw name + ' is already defined in this scope!';
+    if (this.idSheetMap[name] !== undefined) {
+      return null;
     } else {
-      this.sheet[name] = new Identifier(symbolDescribe, this.lastAddress, name);
+      this.idSheetMap[name] = new Identifier(symbolDescribe, this.lastAddress, name);
       this.incraceAddress(symbolDescribe.space);
     }
   }
 
   getDescribe(name) {
-    if (this.sheet[name] !== undefined) {
-      return this.sheet[name];
+    if (this.idSheetMap[name] !== undefined) {
+      return this.idSheetMap[name];
     } else if (this.parentSheet !== null) {
       return this.parentSheet.getDescribe(name);
     } else {
-      throw 'undefined symbol ' + name;
+      return null;
     }
   }
 
   toString() {
     let str = '';
-    for (let id in this.sheet) {
-      str += (this.sheet[id].toString() + '\n');
+    for (let id in this.idSheetMap) {
+      str += (this.idSheetMap[id].toString() + '\n');
     }
     return str;
   }

@@ -12,7 +12,9 @@ class CodeList {
   }
 
   genCode(op, a1, a2, result) {
-    this.list.push(new Code(op, a1, a2, result, this.lineCode++));
+    const code = new Code(op, a1, a2, result, this.lineCode++);
+    this.list.push(code);
+    return code;
   }
 
   getNextLineCode() {

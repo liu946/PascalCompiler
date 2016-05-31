@@ -185,6 +185,11 @@ class Word {
   format() {
     return '(' + this.type + ', "' + this.value + '")';
   }
+  
+  toString() {
+    return this.value ? this.value : this.type;
+  }
+  
 }
 
 module.exports = new DFA();

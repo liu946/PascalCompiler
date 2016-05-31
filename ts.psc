@@ -1,22 +1,33 @@
 Program main;
 var
- i,j,t,m:integer;
- str: array [1 .. 20] of char;
- a:array [1 .. 15] of integer;
+ i,j,t,sck,n,t1,t2:integer;
+ a: array [1 .. 20] of integer;
 Begin
- a[i]:= t - m;
- i := i + j;
- while i <> j and i < 100 do
+ n := 0;
+ while n <> 20 do
    begin
-    if i * 2 > j + 3 then break;
-    i := i + 1;
+    sck := scanf("%d", a + i);
+    if sck = 0 then break;
+    n := n + 1;
    end
- if i < j then
-   begin
-    i := j;
-    j := j + 1;
-   end
-  else if i < 2 * j then
-   i := 3 * j;
-  foo(i,i+j,2*(3+j),(i*((j+i)*2))+((3*i)+j));
+ i := 0;
+ while i <> n - 1 do
+ begin
+    j := i + 1;
+    while j <> n do
+    begin
+        t1 := a[i];
+        t2 := a[j];
+        if t1 > t2 then
+        begin
+            t := a[i];
+            a[i] := a[j];
+            a[j] := t;
+        end
+    end
+ end
+ i := 0;
+ while i < n do
+    printf("%d", a[i]);
+ exit;
 End.
