@@ -68,11 +68,11 @@ class IdentifierSheet {
    * @param name
    * @param symbolDescribe .type .space
    */
-  register(name, symbolDescribe) {
+  register(name, symbolDescribe, type) {
     if (this.idSheetMap[name] !== undefined) {
       return null;
     } else {
-      this.idSheetMap[name] = new Identifier(symbolDescribe, this.lastAddress, name);
+      this.idSheetMap[name] = new Identifier(symbolDescribe, this.lastAddress, name, type);
       this.incraceAddress(symbolDescribe.space);
     }
   }

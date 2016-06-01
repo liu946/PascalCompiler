@@ -105,38 +105,42 @@ class Optimizer {
   }
 
   _preCompile() {
-    this.preCompileCodeGen.gen("");
-    this.preCompileCodeGen.gen("; compile command");
-    this.preCompileCodeGen.gen("; nasm -f macho tsm.nasm");
-    this.preCompileCodeGen.gen("; ld -o tsm tsm.o -arch i386 -lc -macosx_version_min 10.6");
-    this.preCompileCodeGen.gen("[bits 32]");
+    this.preCompileCodeGen.gen(".386");
+    this.preCompileCodeGen.gen("  .model flat, stdcall");
+    this.preCompileCodeGen.gen("  .stack 2048");
+    this.preCompileCodeGen.gen("option casemap : none");
+
+    this.preCompileCodeGen.gen("includelib	\"C:\\Users\\liu\\Documents\\nasm\\msvcrt.lib\"");
+
+    // exports
+    this.preCompileCodeGen.gen("printf		proto c : ptr byte, : vararg");
+    this.preCompileCodeGen.gen("scanf		  proto c : ptr byte, : vararg");
+    this.preCompileCodeGen.gen("_getche		proto c");
+    this.preCompileCodeGen.gen("ExitProcess 	proto : dword ");
 
     // data section
-    this.preCompileCodeGen.gen("section .data");
+    this.preCompileCodeGen.gen(".data");
     // const string
     const strMap = IDSheet.getConstStrMap();
     for (let strName in strMap) {
-      this.preCompileCodeGen.gen(strName + " db " + strMap[strName] + ", 10, 0");
+      this.preCompileCodeGen.gen(strName + " db " + strMap[strName].replace(/\\n/g, '", 10, "').replace(', ""', '') + ", 0");
     }
     // var
     const idSheetMap = IDSheet.getIdSheetMap();
+    const wordSize = {1: 'db', 2: 'dw', 4: 'dword'};
     for (let id in idSheetMap) {
-      this.preCompileCodeGen.gen(id + ' times ' + idSheetMap[id].getAttr('space') + ' db 0 ');
+      if (idSheetMap[id].getAttr('type').substr(0, 5) === 'ARRAY') {
+        this.preCompileCodeGen.gen(
+          id + ' ' + wordSize[idSheetMap[id].getAttr('baseTypeSpace')] + ' ' +
+          parseInt(idSheetMap[id].getAttr('space') / idSheetMap[id].getAttr('baseTypeSpace'))
+          + ' dup(0) ');
+      } else {
+        this.preCompileCodeGen.gen(id + ' ' + wordSize[idSheetMap[id].getAttr('space')] + ' 0');
+      }
     }
 
-    this.preCompileCodeGen.gen("section .text");
-    this.preCompileCodeGen.gen("global start");
-    // exports
-    for (let extern of ['_exit', '_scanf', '_printf']) {
-      this.preCompileCodeGen.gen("extern " + extern);
-    }
-
-    this.preCompileCodeGen.gen('start:');
-
-    // 16位地址对齐
-    // 使用C语言函数
-    this.preCompileCodeGen.gen('\t\tmov ebp, esp');
-    this.preCompileCodeGen.gen('\t\tand esp, 0xFFFFFFF0');
+    this.preCompileCodeGen.gen(".code");
+    this.preCompileCodeGen.gen('	main	proc');
   }
 
   compile() {

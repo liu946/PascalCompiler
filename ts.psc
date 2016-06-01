@@ -4,9 +4,10 @@ var
  a: array [1 .. 20] of integer;
 Begin
  n := 0;
+ printf("please input numbers\n (divied with blank, other character to end)\n");
  while n <> 20 do
    begin
-    sck := scanf("%d", a + i);
+    sck := scanf("%d", a + n);
     if sck = 0 then break;
     n := n + 1;
    end
@@ -24,10 +25,16 @@ Begin
             a[i] := a[j];
             a[j] := t;
         end
+        j := j + 1;
     end
+    i := i + 1;
  end
+ printf("the order is below (asc)\n");
  i := 0;
  while i < n do
-    printf("%d", a[i]);
+    begin
+        printf("%d ", a[i]);
+        i := i + 1;
+    end
  exit;
 End.

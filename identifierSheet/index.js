@@ -30,8 +30,8 @@ class Sheet {
     return this.sheetMap[name] = this.sheetHead;
   }
 
-  register(name, symbolDescribe) {
-    return this.sheetHead.register(name, symbolDescribe);
+  register(name, symbolDescribe, type) {
+    return this.sheetHead.register(name, symbolDescribe, type);
   }
 
   getDescribe(name) {

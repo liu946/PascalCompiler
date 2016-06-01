@@ -58,7 +58,7 @@ char.upperLetter  = char.lowerLetter.toUpperCase();
 char.letter       = char.lowerLetter + char.upperLetter;
 char.number       = '1234567890';
 char.dot          = '.';
-char.symbol       = '+-*/^:<>=!,()[].\'";%';
+char.symbol       = '+-*/^:<>=!,()[].\'";%\\';
 char.space        = '\t\n\r ';
 char.comment      = '{}';
 char.all          = char.letter + char.symbol + char.space + char.number + char.comment;

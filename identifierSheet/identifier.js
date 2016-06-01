@@ -29,6 +29,9 @@ class Identifier {
   }
 
   addressString() {
+    if (this.type === 'ARRAY') {
+      return 'offset ' + this.name;
+    }
     return '' + this.name + '';//this.name;//(' + this.name + ')';
   }
 

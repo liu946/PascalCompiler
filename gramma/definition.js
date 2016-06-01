@@ -50,7 +50,7 @@ exports.arrayType = function() {
     const start = parseInt(rightList[2].getAttr('value'));
     const end = parseInt(rightList[4].getAttr('value'));
     if (end < start) throw '数组元素索引范围有误。';
-    leftSymbol.setAttr('type', 'ARRAY ' + rightList[7].getAttr('type') + ' ' + start + ' ' + end);
+    leftSymbol.setAttr('type', 'ARRAY');
     leftSymbol.setAttr('space', rightList[7].getAttr('space') * (end - start + 1));
     leftSymbol.setAttr('baseTypeSpace', rightList[7].getAttr('space'));
     leftSymbol.setAttr('start', start);
@@ -67,7 +67,7 @@ exports.declareList = function () {
     let idSheet = rightList[4].getAttr('iDSheet') ? rightList[4].getAttr('iDSheet') : new IDSheet();
     leftSymbol.setAttr('iDSheet', idSheet);
     for (let id of rightList[0].getAttr('ids')) {
-      idSheet.register(id, rightList[2].attr);
+      idSheet.register(id, rightList[2].attr, rightList[2].getAttr('type'));
     }
   };
 };

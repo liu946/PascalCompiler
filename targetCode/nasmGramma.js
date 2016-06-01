@@ -15,9 +15,12 @@ function calculateGrammaGenerator(op) {
     if (a2.type === 'ID')
       a2c = idSheet.getDescribe(a2).getVarByMemOrReg();
     targetCode.getGenerator().gen(op + ' ' + a1c.toString() + ', ' + a2c.toString());
-    if (a1.type === 'ID')
+    if (a1.type === 'ID'){
       idSheet.getDescribe(a1).removeIn(a1c);
+      a1c.setIn(idSheet.getDescribe(result.toString()));
+    }
     idSheet.getDescribe(result).setIn(a1c);
+
   };
 }
 
@@ -52,10 +55,10 @@ const gramma = {
     let a1c = a1, a2c = a2;
     result = idSheet.getDescribe(result);
     if (a1.type === 'ID')
-      a1c = idSheet.getDescribe(a2).getVarByReg();
+      a1c = idSheet.getDescribe(a1).getVarByReg();
     if (a2.type === 'ID')
       a2c = idSheet.getDescribe(a2).getVarByReg();
-    targetCode.getGenerator().gen('MOV dword[' + result.name + ' + ' + a1c + '], ' + a2c);
+    targetCode.getGenerator().gen('MOV [' + result.name + ' + ' + a1c + '], ' + a2c);
   },
   ASSIGNA: function (a1, a2, result) {
     if (!allocer) allocer = require('./registerAllocer');
@@ -64,8 +67,8 @@ const gramma = {
     if (a2.type === 'ID')
       a2c = idSheet.getDescribe(a2).getVarByReg();
     const tempReg = allocer.getBlankReg();
-    targetCode.getGenerator().gen('MOV dword ' + tempReg + ', [' + a1.toString() + '+' + a2c +']');
-    targetCode.getGenerator().gen('MOV dword ' + rec + ', ' + tempReg);
+    targetCode.getGenerator().gen('MOV ' + tempReg + ', [' + a1.toString() + '+' + a2c +']');
+    targetCode.getGenerator().gen('MOV ' + rec + ', ' + tempReg);
   },
   ASSIGN: function (a1, a2, result) {
     if (a1.type === 'ID') {
@@ -74,7 +77,7 @@ const gramma = {
       idSheet.getDescribe(result.toString()).setIn(a1r);
     } else {
       const rec = idSheet.getDescribe(result).getVarByMemOrReg();
-      targetCode.getGenerator().gen('MOV dword ' + rec + ', ' + a1.toString());
+      targetCode.getGenerator().gen('MOV ' + rec + ', ' + a1.toString());
     }
   },
   GOTO: function (a1, a2, result) {
@@ -111,23 +114,25 @@ const gramma = {
   },
   PARAM:  function (a1, a2, result) {
     if (a1.type === 'addrLabel') {
-      targetCode.getGenerator().gen('push dword ' + a1.toString());
+      targetCode.getGenerator().gen('push offset ' + a1.toString());
     }else if (a1.type === 'ID') {
       const a1r = idSheet.getDescribe(a1).getVarByMemOrReg();
-      targetCode.getGenerator().gen('push dword ' + a1r.toString());
+      targetCode.getGenerator().gen('push ' + a1r.toString());
     } else {
-      targetCode.getGenerator().gen('push dword ' + a1.toString());
+      targetCode.getGenerator().gen('push ' + a1.toString());
     }
   },
   CALL:  function (a1, a2, result) {
-    targetCode.getGenerator().gen('CALL _' + a1.toString());
+    targetCode.getGenerator().gen('CALL ' + a1.toString());
     if (result) {
       idSheet.getDescribe(result).setIn('EAX');
     }
   },
   EXIT: function (a1, a2, result) {
-    targetCode.getGenerator().gen('mov dword[ esp ], 0');
-    targetCode.getGenerator().gen('call   _exit');
+    targetCode.getGenerator().gen('invoke	_getche');
+    targetCode.getGenerator().gen('invoke ExitProcess,0');
+    targetCode.getGenerator().gen('main	endp');
+    targetCode.getGenerator().gen('end   main');
   }
 };
 

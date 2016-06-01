@@ -330,6 +330,11 @@ const gramma = {
       generatorRight: 'ID',
       generatorFunction: function (leftSymbol, rightList) {
         leftSymbol.setAttr('addr', rightList[0].getAttr('word'));
+        const id = sheet.getDescribe(rightList[0].getAttr('word').value);
+        if (id && id.type === 'ARRAY') {
+          leftSymbol.setAttr('baseTypeSpace', id.getAttr('baseTypeSpace'));
+          leftSymbol.setAttr('pointer', true);
+        }
       },
     },
     {
