@@ -136,8 +136,8 @@ class Block {
 
   print() {
     console.log(this.toString());
-    console.log('>>>>>> 活动变量 <<<<<<');
-    console.log(JSON.stringify(this.liveList));
+    // console.log('>>>>>> 活动变量 <<<<<<');
+    // console.log(JSON.stringify(this.liveList));
     console.log('>>>>>> 目标代码 <<<<<<');
     console.log(this.targetCodeGenerator.toString());
   }

@@ -124,6 +124,7 @@ const gramma = {
   },
   CALL:  function (a1, a2, result) {
     targetCode.getGenerator().gen('CALL ' + a1.toString());
+    targetCode.getGenerator().gen('ADD ESP, ' + (a2 * 4));
     if (result) {
       idSheet.getDescribe(result).setIn('EAX');
     }
