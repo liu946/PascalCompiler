@@ -5,10 +5,9 @@
 const keyWord = [
   'case','const',
   'div','downto','file',
-  'for','func','goto','in','lable',
-  'mod','nil','packed',
-  'proc','record','repeat','set',
-  'to','type','until',
+  'for','func','goto','in',
+  'proc','record','set',
+  'to','type',
   // loop
   'while','do','break',
   // structure

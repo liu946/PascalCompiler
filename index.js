@@ -9,7 +9,7 @@ fs.readFile('./ts.psc', function(err, data){
   if (err) return;
   let list = wordAnalyzer.analyze(data.toString());
   let s = new StatsSet();
-  //s.print();
+  s.print();
   s.analyze(list);
   code.print();
   optimizer.init(code.list);
